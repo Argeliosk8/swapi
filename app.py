@@ -46,5 +46,9 @@ def get_users():
     json = [user.serialize() for user in users]
     return json, 200
 
+@app.route('/users/<int:user_id>', methods = ['GET'])
+def get_user(user_id):
+    user = Users.query.get(user_id)
+    return jsonify(user.serialize())
 
 db.create_all()
