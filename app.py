@@ -1,5 +1,5 @@
-from flask import Flask, jsonify
-from models import db, People, Planet, Users
+from flask import Flask, jsonify, request
+from models import db, People, Planet, Users, Favorites
 from flask_migrate import Migrate
 
 app = Flask(__name__)
@@ -24,10 +24,27 @@ def get_people():
     json = [single.serialize() for single in people]
     return json, 200
 
-@app.route('/people/<int:people_id>', methods=['GET'])
+@app.route('/people/<int:people_id>', methods=['GET', 'DELETE'])
 def get_single(people_id):
-    single = People.query.get(people_id)
-    return jsonify(single.serialize())
+    if request.method == 'GET':
+        single = People.query.get(people_id)
+        if single:
+            return jsonify(single.serialize())
+        else:
+            return jsonify({'message': 'character not found'}), 404
+        
+    if request.method == 'DELETE':
+        try:
+            single_to_delete = People.query.get(people_id)
+            if single_to_delete:
+                db.session.delete(single_to_delete)
+                db.session.commit()
+                return jsonify({'message': 'character deleted'})
+            else:
+                return jsonify({'message': 'character not found'}), 404
+        except:
+            db.session.rollback()
+            return jsonify({'error': 'An error occurred'}), 500
 
 @app.route('/planet', methods=['GET'])
 def get_planets():
@@ -50,5 +67,50 @@ def get_users():
 def get_user(user_id):
     user = Users.query.get(user_id)
     return jsonify(user.serialize())
+
+@app.route('/users/favorites', methods = ['GET'])
+def get_favorites():
+    favorites = Favorites.query.filter_by(user_id = 2)
+    json = [favorite.serialize() for favorite in favorites]
+    return json, 200
+
+@app.route('/favorite/planet/<int:id>', methods = ['POST', 'DELETE'])
+def add_favorite_planet(id):
+    if request.method == 'POST':
+        new_planet_favorite = Favorites(user_id = 2, people_id = None, planet_id = id)
+        db.session.add(new_planet_favorite)
+        db.session.commit()
+        return jsonify({'message': 'new favorite planet added'})
+    
+    if request.method == 'DELETE':
+        try:
+            fav_planet_to_delete = Favorites.query.filter_by(planet_id = id).first()
+            if fav_planet_to_delete:
+                db.session.delete(fav_planet_to_delete)
+                db.session.commit()
+                return jsonify({"message": "the planet was deleted from favorites"}), 200
+        except:
+            db.session.rollback()
+            return jsonify({"message": "planet not found in favorites"})
+
+
+@app.route('/favorite/people/<int:id>', methods = ['POST', 'DELETE'])
+def add_favorite_people(id):
+    if request.method == 'POST':
+        new_people_favorite = Favorites(user_id = 2, people_id = id, planet_id = None)
+        db.session.add(new_people_favorite)
+        db.session.commit()
+        return jsonify({'message': 'new favorite planet added'})
+    
+    if request.method == 'DELETE':
+        try:
+            fav_people_to_delete = Favorites.query.filter_by(people_id = id).first()
+            if fav_people_to_delete:
+                db.session.delete(fav_people_to_delete)
+                db.session.commit()
+                return jsonify({"message": "the character was deleted from favorites"}), 200
+        except:
+            db.session.rollback()
+            return jsonify({"message": "character was not found in favorites"})
 
 db.create_all()

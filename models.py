@@ -77,8 +77,8 @@ class Users(db.Model):
 class Favorites(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    people_id = db.Column(db.Integer, db.ForeignKey('people.id'))
-    planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'))
+    people_id = db.Column(db.Integer, db.ForeignKey('people.id'), nullable = True)
+    planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'), nullable = True)
 
     def __repr__(self):
         return '<Favorites %r>' % self.id
