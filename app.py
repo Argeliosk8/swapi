@@ -76,41 +76,59 @@ def get_favorites():
 
 @app.route('/favorite/planet/<int:id>', methods = ['POST', 'DELETE'])
 def add_favorite_planet(id):
-    if request.method == 'POST':
-        new_planet_favorite = Favorites(user_id = 2, people_id = None, planet_id = id)
-        db.session.add(new_planet_favorite)
-        db.session.commit()
-        return jsonify({'message': 'new favorite planet added'})
+    planet = bool(Favorites.query.filter_by(planet_id = id).first())
+    if request.method == 'POST':        
+        if planet:
+            return jsonify({'message': 'The planet was alerady added to favorites'}), 400              
+        else:
+            try:
+                new_planet_favorite = Favorites(user_id = 2, people_id = None, planet_id = id)
+                db.session.add(new_planet_favorite)
+                db.session.commit()
+                return jsonify({'message': 'new favorite planet added'}), 200
+            except:
+                db.session.rollback()
+                return jsonify({'message': 'there was an error with your request'}), 400
+            
     
     if request.method == 'DELETE':
-        try:
-            fav_planet_to_delete = Favorites.query.filter_by(planet_id = id).first()
-            if fav_planet_to_delete:
-                db.session.delete(fav_planet_to_delete)
-                db.session.commit()
-                return jsonify({"message": "the planet was deleted from favorites"}), 200
-        except:
-            db.session.rollback()
-            return jsonify({"message": "planet not found in favorites"})
+        if planet:
+            try:
+                fav_planet_to_delete = Favorites.query.filter_by(planet_id = id).first()
+                if fav_planet_to_delete:
+                    db.session.delete(fav_planet_to_delete)
+                    db.session.commit()
+                    return jsonify({"message": "the planet was deleted from favorites"}), 200
+            except:
+                db.session.rollback()
+                return jsonify({"message": "planet not found in favorites"})
+        else:
+            return jsonify({"message": "planet not found"}), 400
 
 
 @app.route('/favorite/people/<int:id>', methods = ['POST', 'DELETE'])
 def add_favorite_people(id):
+    character = bool(Favorites.query.filter_by(people_id = id).first())
     if request.method == 'POST':
-        new_people_favorite = Favorites(user_id = 2, people_id = id, planet_id = None)
-        db.session.add(new_people_favorite)
-        db.session.commit()
-        return jsonify({'message': 'new favorite planet added'})
+        if character: 
+            return jsonify({'message': 'the character already exists in favorites'})
+        else:
+            new_people_favorite = Favorites(user_id = 2, people_id = id, planet_id = None)
+            db.session.add(new_people_favorite)
+            db.session.commit()
+            return jsonify({'message': 'new favorite planet added'})
     
     if request.method == 'DELETE':
-        try:
-            fav_people_to_delete = Favorites.query.filter_by(people_id = id).first()
-            if fav_people_to_delete:
-                db.session.delete(fav_people_to_delete)
-                db.session.commit()
-                return jsonify({"message": "the character was deleted from favorites"}), 200
-        except:
+       if character:
+         try:
+            fav_people_to_delete = Favorites.query.filter_by(people_id = id).first()            
+            db.session.delete(fav_people_to_delete)
+            db.session.commit()
+            return jsonify({"message": "the character was deleted from favorites"}), 200
+         except:
             db.session.rollback()
             return jsonify({"message": "character was not found in favorites"})
+       else:
+        return jsonify({"message": "character not found"})
 
 db.create_all()
