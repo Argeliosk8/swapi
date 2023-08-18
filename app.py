@@ -1,18 +1,29 @@
 from flask import Flask, jsonify, request
 from models import db, People, Planet, Users, Favorites
 from flask_migrate import Migrate
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Fullstack2023$@localhost:5432/swapi'
 #app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/mydb.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecret'
+bcrypt = Bcrypt(app)
 
 
 db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=False)
 app.app_context().push()
 
+@app.route('/password/<passtocheck>', methods=['GET'])
+def check_password(passtocheck):
+    password = 'holamundo'
+    pw_hash = bcrypt.generate_password_hash(password)
+    validate = bcrypt.check_password_hash(pw_hash, passtocheck)
+    if validate == True:
+        return "pass verification"
+    else:
+        return "fail verification"
 
 @app.route('/', methods=["GET"])
 def index():
